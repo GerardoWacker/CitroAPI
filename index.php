@@ -1,9 +1,22 @@
 <?php
 
+print "CitroAPI 1.0 \n";
+print "---------------------- \n";
+print "Created by Gerardo Wacker, 2019 \n";
+print "From humans, to machines, here's my gift. A copy of the internet. \n";
+print "\n";
+print "\n";
+print "\n";
+
 ini_set("user_agent","CitroAPI/1.0\n");
+print "Setting agent settings...\n";
 $start = "urls.html";
+print "Creating directories...\n";
 mkdir("cache");
-mkdir("info");
+print "Directories succesfully created.\n";
+print "\n";
+print "---------------------- \n";
+print "\n";
 
 $already_crawled = array();
 $crawling = array();
@@ -29,10 +42,16 @@ function get_details($url) {
 
 	}
 	$resulturl = str_replace("\n", "", $url);
+	$aaaa = str_replace("http://", "", $resulturl);
+	$aaaaa = str_replace("?", "", $aaaa);
+	$aaa = str_replace("https://", "", $aaaaa);
 	$resulttitle = str_replace("\n", "", $title);
 	$jsonreturn = '{ "Title": "'.str_replace("\n", "", $title).'", "Description": "'.str_replace("\n", "", $description).'", "Keywords": "'.str_replace("\n", "", $keywords).'", "URL": "'.$url.'"}';
-	file_put_contents("cache/$resulttitle.html", file_get_contents("$resulturl"));
-	file_put_contents("info/$resulttitle.json", $jsonreturn);
+	mkdir("cache/$aaa", 0777, true);
+	file_put_contents("cache/$aaa/index.html", file_get_contents("$resulturl"));
+	print "Saved $resulturl\n";
+	file_put_contents("cache/$aaa/info.json", $jsonreturn);
+	print "Saved $resulturl's info\n";
 }
 
 function follow_links($url) {
@@ -70,7 +89,6 @@ function follow_links($url) {
 	array_shift($crawling);
 	foreach ($crawling as $site) {
 		follow_links($site);
-		print "Crawled $site";
 	}
 
 }
