@@ -27,11 +27,17 @@ function guardar_sitio($url, $extension) {
 	$resulturl = str_replace("\n", "", $url);
 	$aaaa = str_replace("http://", "", $resulturl);
 	$aaaaa = str_replace("?", "", $aaaa);
-	$aaa = str_replace("https://", "", $aaaaa);
+    $aaa = str_replace("https://", "", $aaaaa);
     
     // Crear carpeta de cache si no existe
-	mkdir("cache/$aaa", 0777, true);
-	file_put_contents("cache/$aaa/index.$extension", file_get_contents("$resulturl"));
+    if($extension == "html") {
+        mkdir("cache/$aaa", 0777, true);
+        file_put_contents("cache/$aaa/index.$extension", file_get_contents("$resulturl"));
+    } else {
+        $dir = pathinfo("cache/$aaa");
+        mkdir($dir['dirname'], 0777, true);
+        file_put_contents("cache/$aaa", file_get_contents("$resulturl"));
+    }
 	print "Guardado $resulturl\n";
 }
 
@@ -41,7 +47,7 @@ function seguir_links($url) {
     // Crear un nuevo Documento DOM.
     $documento = new DOMDocument();
     // Cargar la URL correspondiente.
-    $documento->loadHTML(file_get_contents($url, false, stream_context_create(array('http'=>array('method'=>"GET", 'headers'=>"CitroAPI/2.0\n")))));
+    @$documento->loadHTML(@file_get_contents($url, false, stream_context_create(array('http'=>array('method'=>"GET", 'headers'=>"CitroAPI/2.0\n")))));
 
     // Obtener todos los links, imágenes, y los link tags.
     $links = $documento->getElementsByTagName("a");
@@ -84,6 +90,23 @@ function seguir_links($url) {
 
         $l = $img->getAttribute("src");
         
+        // MUCHO parsing para solo obtener links.
+        if (substr($l, 0, 1) == "/" && substr($l, 0, 2) != "//") {
+			$l = parse_url($url)["scheme"]."://".parse_url($url)["host"].$l;
+		} else if (substr($l, 0, 2) == "//") {
+			$l = parse_url($url)["scheme"].":".$l;
+		} else if (substr($l, 0, 2) == "./") {
+			$l = parse_url($url)["scheme"]."://".parse_url($url)["host"].dirname(parse_url($url)["path"]).substr($l, 1);
+		} else if (substr($l, 0, 1) == "#") {
+			$l = parse_url($url)["scheme"]."://".parse_url($url)["host"].parse_url($url)["path"].$l;
+		} else if (substr($l, 0, 3) == "../") {
+			$l = parse_url($url)["scheme"]."://".parse_url($url)["host"]."/".$l;
+		} else if (substr($l, 0, 11) == "javascript:") {
+			continue;
+		} else if (substr($l, 0, 5) != "https" && substr($l, 0, 4) != "http") {
+			$l = parse_url($url)["scheme"]."://".parse_url($url)["host"]."/".$l;
+        }
+        
         // Si el link no está en el array
         if (!in_array($l, $sitios_visitados)) {
             $sitios_visitados[] = $l;
@@ -97,6 +120,23 @@ function seguir_links($url) {
 
         if($linktag->getAttribute("rel") == "stylesheet") {
             $l = $linktag->getAttribute("href");
+
+            // MUCHO parsing para solo obtener links.
+            if (substr($l, 0, 1) == "/" && substr($l, 0, 2) != "//") {
+		    	$l = parse_url($url)["scheme"]."://".parse_url($url)["host"].$l;
+		    } else if (substr($l, 0, 2) == "//") {
+		    	$l = parse_url($url)["scheme"].":".$l;
+		    } else if (substr($l, 0, 2) == "./") {
+		    	$l = parse_url($url)["scheme"]."://".parse_url($url)["host"].dirname(parse_url($url)["path"]).substr($l, 1);
+		    } else if (substr($l, 0, 1) == "#") {
+		    	$l = parse_url($url)["scheme"]."://".parse_url($url)["host"].parse_url($url)["path"].$l;
+		    } else if (substr($l, 0, 3) == "../") {
+		    	$l = parse_url($url)["scheme"]."://".parse_url($url)["host"]."/".$l;
+		    } else if (substr($l, 0, 11) == "javascript:") {
+		    	continue;
+		    } else if (substr($l, 0, 5) != "https" && substr($l, 0, 4) != "http") {
+		    	$l = parse_url($url)["scheme"]."://".parse_url($url)["host"]."/".$l;
+            }
 
             // Si el link no está en el array
             if (!in_array($l, $sitios_visitados)) {
